@@ -1,10 +1,13 @@
 package com.example.quizapp
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 
 class QuizActivity : AppCompatActivity(),View.OnClickListener {
@@ -12,13 +15,15 @@ class QuizActivity : AppCompatActivity(),View.OnClickListener {
     private var listOfQuestions : ArrayList<Questions>? = null
     var currentPosition = 1
     lateinit var question: TextView
-    lateinit  var optionOne : TextView
-    lateinit var optionTwo : TextView
-    lateinit var optionThree : TextView
-    lateinit var optionFour : TextView
+
     lateinit var submitBtn : Button
 
+    lateinit var optionList:List<TextView>
+
     var selectedChoice : Int = 0
+
+    var score : Int = 0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,80 +38,121 @@ class QuizActivity : AppCompatActivity(),View.OnClickListener {
 
 
         question = findViewById<TextView>(R.id.q_question)
-        optionOne = findViewById<TextView>(R.id.tv_option_one)
-        optionTwo = findViewById<TextView>(R.id.tv_option_two)
-        optionThree = findViewById<TextView>(R.id.tv_option_three)
-        optionFour = findViewById<TextView>(R.id.tv_option_four)
+        val optionOne = findViewById<TextView>(R.id.tv_option_one)
+        val optionTwo = findViewById<TextView>(R.id.tv_option_two)
+        val optionThree = findViewById<TextView>(R.id.tv_option_three)
+        val optionFour = findViewById<TextView>(R.id.tv_option_four)
+
+        val progressBar = findViewById<ProgressBar>(R.id.q_progressBar)
+        progressBar.max = listOfQuestions!!.size
+        progressBar.progress = currentPosition
+
+
         submitBtn = findViewById<Button>(R.id.q_btn_next)
+
+         optionList = listOf<TextView>(optionOne,optionTwo,optionThree,optionFour)
 
         setQuestion();
 
-        optionOne.setOnClickListener(this)
-        optionTwo.setOnClickListener(this)
-        optionThree.setOnClickListener(this)
-        optionFour.setOnClickListener(this)
+        for(option in optionList){
+            option.setOnClickListener(this)
+        }
 
         submitBtn.setOnClickListener(View.OnClickListener {
             var ans = listOfQuestions!!.get(currentPosition-1).answer
+            val btnText : String = submitBtn.text.toString()
+            when(btnText){
+                "SUBMIT" ->{
+                    checkAnswer(ans,selectedChoice)
+                    for(option in optionList){
+                        option.setClickable(false)
+                    }
+                    if(listOfQuestions!!.size == currentPosition)
+                        submitBtn.setText("FINISH")
+                    else{
+                        submitBtn.setText("NEXT")
+                    }
+                }
+                "NEXT" ->{
+                    currentPosition++
+                    setQuestion()
+                    for(option in optionList){
+                        option.setClickable(true)
+                    }
+                    progressBar.progress = currentPosition
 
+                }
+                "FINISH" ->{
+                    Toast.makeText(this,"Your Score is $score",Toast.LENGTH_LONG).show()
+                    var intent = Intent(this , QuizApp()::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+            }
             checkAnswer(ans , selectedChoice)
 
         })
     }
 
-    private fun checkAnswer(ans:Int,id:Int){
-        when(ans){
+    private fun checkAnswer(ans:Int,selectedChoice:Int){
+        when(selectedChoice){
             1 ->{
-                Log.i("---->",id.toString())
-                if(ans == id)
-                    optionOne.background = ContextCompat.getDrawable(this,R.drawable.right_option_color)
-                else
-                    optionOne.background = ContextCompat.getDrawable(this,R.drawable.wrong_option_color)
+                    optionList.get(selectedChoice-1).background = ContextCompat.getDrawable(this,R.drawable.wrong_option_color)
+                    optionList.get(ans - 1).background = ContextCompat.getDrawable(this,R.drawable.right_option_color)
             }
             2 ->{
-                if(ans == id)
-                    optionTwo.background = ContextCompat.getDrawable(this,R.drawable.right_option_color)
-                else
-                    optionTwo.background = ContextCompat.getDrawable(this,R.drawable.wrong_option_color)
+                optionList.get(selectedChoice-1).background = ContextCompat.getDrawable(this,R.drawable.wrong_option_color)
+                optionList.get(ans - 1).background = ContextCompat.getDrawable(this,R.drawable.right_option_color)
+
             }
             3 ->{
-                if(ans == id)
-                    optionThree.background = ContextCompat.getDrawable(this,R.drawable.right_option_color)
-                else
-                    optionThree.background = ContextCompat.getDrawable(this,R.drawable.wrong_option_color)
+                optionList.get(selectedChoice-1).background = ContextCompat.getDrawable(this,R.drawable.wrong_option_color)
+                optionList.get(ans - 1).background = ContextCompat.getDrawable(this,R.drawable.right_option_color)
             }
             4 ->{
-                if(ans == id)
-                    optionFour.background = ContextCompat.getDrawable(this,R.drawable.right_option_color)
-                else
-                    optionFour.background = ContextCompat.getDrawable(this,R.drawable.wrong_option_color)
+                optionList.get(selectedChoice-1).background = ContextCompat.getDrawable(this,R.drawable.wrong_option_color)
+                optionList.get(ans - 1).background = ContextCompat.getDrawable(this,R.drawable.right_option_color)
             }
+
         }
+        if(ans == selectedChoice)
+            score+=1
     }
 
     fun setQuestion(){
         var questionObject = listOfQuestions!!.get(currentPosition - 1)
         question.text = questionObject.question
-        optionOne.text = questionObject.optOne
-        optionTwo.text = questionObject.optTwo
-        optionThree.text = questionObject.optThree
-        optionFour.text = questionObject.optFour
+
+        optionList.get(0).text = questionObject.optOne
+        optionList.get(1).text = questionObject.optTwo
+        optionList.get(2).text = questionObject.optThree
+        optionList.get(3).text = questionObject.optFour
+
+        defaultOption()
+        submitBtn.setText("SUBMIT")
     }
 
     override fun onClick(v : View){
         //logic
         when(v.id){
             R.id.tv_option_one ->{
-                selectedOption(optionOne,R.drawable.selected_option_border_bg)
+                selectedOption(optionList.get(0),R.drawable.selected_option_border_bg)
+                selectedChoice = 1
             }
             R.id.tv_option_two ->{
-                selectedOption(optionTwo,R.drawable.selected_option_border_bg)
+                selectedOption(optionList.get(1),R.drawable.selected_option_border_bg)
+                selectedChoice = 2
+
             }
             R.id.tv_option_three ->{
-                selectedOption(optionThree,R.drawable.selected_option_border_bg)
+                selectedOption(optionList.get(2),R.drawable.selected_option_border_bg)
+                selectedChoice = 3
+
             }
             R.id.tv_option_four ->{
-                selectedOption(optionFour,R.drawable.selected_option_border_bg)
+                selectedOption(optionList.get(3),R.drawable.selected_option_border_bg)
+                selectedChoice = 4
+
             }
         }
     }
@@ -119,9 +165,9 @@ class QuizActivity : AppCompatActivity(),View.OnClickListener {
     }
 
     private fun defaultOption(){
-        optionOne.background = ContextCompat.getDrawable(this,R.drawable.default_option_border_bg)
-        optionTwo.background = ContextCompat.getDrawable(this,R.drawable.default_option_border_bg)
-        optionThree.background = ContextCompat.getDrawable(this,R.drawable.default_option_border_bg)
-        optionFour.background = ContextCompat.getDrawable(this,R.drawable.default_option_border_bg)
+        optionList.get(0).background = ContextCompat.getDrawable(this,R.drawable.default_option_border_bg)
+        optionList.get(1).background = ContextCompat.getDrawable(this,R.drawable.default_option_border_bg)
+        optionList.get(2).background = ContextCompat.getDrawable(this,R.drawable.default_option_border_bg)
+        optionList.get(3).background = ContextCompat.getDrawable(this,R.drawable.default_option_border_bg)
     }
 }
